@@ -546,7 +546,7 @@ public:
     }
 };
 
-void AddSC_transmog() 
+void AddSC_Transmogrification() 
 {
     new global_transmog_script();
     new npc_transmogrifier();

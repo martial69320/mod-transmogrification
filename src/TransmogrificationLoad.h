@@ -1,12 +1,11 @@
 #ifndef TRANSMOGR_SCRIPTS_LOADER_H
 #define TRANSMOGR_SCRIPTS_LOADER_H
 
-void AddSC_transmog();
+void AddSC_Transmogrification();
 
-void AddTransmogScripts()
+void AddTransmogrificationScripts()
 {
-    AddSC_transmog();
+    AddSC_Transmogrification();
 }
 
 #endif /* TRANSMOG_SCRIPTS_LOADER_H */
-
