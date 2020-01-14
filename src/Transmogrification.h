@@ -5,20 +5,15 @@
 #ifndef DEF_TRANSMOGRIFICATION_H
 #define DEF_TRANSMOGRIFICATION_H
 
+#include "Common.h"
 #include "Player.h"
-#include "Config.h"
-#include "ScriptMgr.h"
-#include "ScriptedGossip.h"
-#include "GameEventMgr.h"
-#include <vector>
+#include "Item.h"
+#include "WorldSession.h"
+#include <set>
 #include <unordered_map>
+#include <map>
 
 #define MAX_OPTIONS 25 // do not alter
-
-class Item;
-class Player;
-class WorldSession;
-struct ItemTemplate;
 
 enum TransmogAcoreStrings // Language.h might have same entries, appears when executing SQL, change if needed
 {
@@ -33,6 +28,16 @@ enum TransmogAcoreStrings // Language.h might have same entries, appears when ex
     LANG_ERR_UNTRANSMOG_OK,
     LANG_ERR_UNTRANSMOG_NO_TRANSMOGS,
     LANG_PRESET_ERR_INVALID_NAME,
+};
+
+enum TransmogrificationGossipItem
+{
+    ITEM_HOW_WORKS,
+    ITEM_MANAGE_SETS,
+    ITEM_REMOVE_ALL_TRANSMOG,
+    ITEM_REMOVE_SINGLE_TRANSMOG,
+    ITEM_UPDATE_MENU,
+    ITEM_BACK
 };
 
 class Transmogrification
@@ -78,19 +83,37 @@ public:
 
     std::string GetItemIcon(uint32 entry, uint32 width, uint32 height, int x, int y) const;
     std::string GetSlotIcon(uint8 slot, uint32 width, uint32 height, int x, int y) const;
-    const char * GetSlotName(uint8 slot, WorldSession* session) const;
+    std::string const GetSlotName(uint8 slot) const;
     std::string GetItemLink(Item* item, WorldSession* session) const;
     std::string GetItemLink(uint32 entry, WorldSession* session) const;
     uint32 GetFakeEntry(uint64 itemGUID) const;
     void UpdateItem(Player* player, Item* item) const;
-    void DeleteFakeEntry(Player* player, uint8 slot, Item* itemTransmogrified, SQLTransaction* trans = NULL);
+    void DeleteFakeEntry(Player* player, uint8 slot, Item* itemTransmogrified, SQLTransaction* trans = nullptr);
     void SetFakeEntry(Player* player, uint32 newEntry, uint8 slot, Item* itemTransmogrified);
 
     TransmogAcoreStrings Transmogrify(Player* player, uint64 itemGUID, uint8 slot, /*uint32 newEntry, */bool no_cost = false);
     bool CanTransmogrifyItemWithItem(Player* player, ItemTemplate const* destination, ItemTemplate const* source) const;
     bool SuitableForTransmogrification(Player* player, ItemTemplate const* proto) const;
 
-//private:
+    void ClearPlayerAtLogout(Player* player);
+    void LoadPlayerAtLogin(Player* player);
+    std::string const GetGossipIcon(uint8 slot, Player* player);
+    std::string const GetGossipItemName(TransmogrificationGossipItem gossipItem);
+
+    bool CanSavePresets(Player* player);
+    void SavePreset(Player* player, Creature* creature, std::string const& name);
+
+    void GossipShowTransmogItems(Player* player, Creature* creature, uint8 slot);
+    void GossipRemoveAllTransmogrifications(Player* player);
+    void GossipRemoveSingleTransmogrifications(Player* player, uint32 const& action);
+    void GossipShowPresetsMenu(Player* player, Creature* creature);
+    void GossipUsePreset(Player* player, Creature* creature, uint32 const& action);
+    void GossipViewPreset(Player* player, Creature* creature, uint32 const& action, uint32 const& sender);
+    void GossipDeletePreset(Player* player, Creature* creature, uint32 const& action);
+    void GossipSavePreset(Player* player, Creature* creature, uint32 const& action, uint32 const& sender);
+    void GossipTransmogrify(Player* player, Creature* creature, uint32 const& action, uint32 const& sender);
+
+private:
     typedef std::unordered_map<uint64, uint64> TransmogrificationDataContainer;
     typedef std::unordered_map<uint64, TransmogrificationDataContainer> TransmogrificationMapContainer;
     typedef std::map<uint8, uint32> SlotsContainer;
@@ -146,9 +169,9 @@ public:
     bool EnableSets;
     uint8 MaxSets;
     float SetCostModifier;
-    int32 SetCopperCost;
+    int32 SetCopperCost;   
 };
 
-#define sTransmogrification Transmogrification::instance()
+#define sTransmog Transmogrification::instance()
 
 #endif

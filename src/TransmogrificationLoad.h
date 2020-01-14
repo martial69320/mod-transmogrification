@@ -1,5 +1,5 @@
-#ifndef TRANSMOGR_SCRIPTS_LOADER_H
-#define TRANSMOGR_SCRIPTS_LOADER_H
+#ifndef TRANSMOGRIFICATION_LOADER_H
+#define TRANSMOGRIFICATION_LOADER_H
 
 void AddSC_Transmogrification();
 
@@ -8,4 +8,4 @@ void AddTransmogrificationScripts()
     AddSC_Transmogrification();
 }
 
-#endif /* TRANSMOG_SCRIPTS_LOADER_H */
+#endif /* TRANSMOGRIFICATION_LOADER_H */
