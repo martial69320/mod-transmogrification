@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>
+ */
+
 #ifndef DEF_TRANSMOGRIFICATION_H
 #define DEF_TRANSMOGRIFICATION_H
 
@@ -26,47 +30,79 @@ enum TransmogAcoreStrings // Language.h might have same entries, appears when ex
     LANG_ERR_TRANSMOG_INVALID_ITEMS,
     LANG_ERR_TRANSMOG_NOT_ENOUGH_MONEY,
     LANG_ERR_TRANSMOG_NOT_ENOUGH_TOKENS,
-
     LANG_ERR_UNTRANSMOG_OK,
     LANG_ERR_UNTRANSMOG_NO_TRANSMOGS,
-
     LANG_PRESET_ERR_INVALID_NAME,
 };
 
 class Transmogrification
 {
 public:
-    typedef std::unordered_map<uint64, uint64> transmogData;
-    typedef std::unordered_map<uint64, transmogData> transmogMap;
-    transmogMap entryMap; // entryMap[pGUID][iGUID] = entry
-    transmogData dataMap; // dataMap[iGUID] = pGUID
+    static Transmogrification* instance();
 
-    bool EnableSetInfo;
-    uint32 SetNpcText;
-
-    typedef std::map<uint8, uint32> slotMap;
-    typedef std::map<uint8, slotMap> presetData;
-    typedef std::unordered_map<uint64, presetData> presetDataMap;    
-    typedef std::map<uint8, std::string> presetIdMap;
-    typedef std::unordered_map<uint64, presetIdMap> presetNameMap;
-
-    presetNameMap presetByName; // presetByName[pGUID][presetID] = presetName
-    presetDataMap presetById; // presetById[pGUID][presetID][slot] = entry
-
-    void PresetTransmog(Player* player, Item* itemTransmogrified, uint32 fakeEntry, uint8 slot);
-
-    bool EnableSets;
-    uint8 MaxSets;
-    float SetCostModifier;
-    int32 SetCopperCost;
+    // Config options
+    void LoadConfig(bool reload); // thread unsafe
 
     bool GetEnableSets() const;
     uint8 GetMaxSets() const;
     float GetSetCostModifier() const;
     int32 GetSetCopperCost() const;
 
+    bool GetEnableTransmogInfo() const;
+    uint32 GetTransmogNpcText() const;
+    bool GetEnableSetInfo() const;
+    uint32 GetSetNpcText() const;
+
+    int32 GetCopperCost() const;
+    bool GetRequireToken() const;
+    uint32 GetTokenEntry() const;
+    uint32 GetTokenAmount() const;
+
+    bool GetAllowMixedArmorTypes() const;
+    bool GetAllowMixedWeaponTypes() const;
+
+    uint32 GetSpecialPrice(ItemTemplate const* proto) const;
+
+    void DeleteFakeFromDB(uint64 itemGUID, SQLTransaction* trans = nullptr);
+    float GetScaledCostModifier() const;
+
+    bool IsAllowed(uint32 entry) const;
+    bool IsNotAllowed(uint32 entry) const;
+    bool IsAllowedQuality(uint32 quality) const;
+    bool IsRangedWeapon(uint32 Class, uint32 SubClass) const;
+
+    void PresetTransmog(Player* player, Item* itemTransmogrified, uint32 fakeEntry, uint8 slot);
+
     void LoadPlayerSets(uint64 pGUID);
     void UnloadPlayerSets(uint64 pGUID);
+
+    std::string GetItemIcon(uint32 entry, uint32 width, uint32 height, int x, int y) const;
+    std::string GetSlotIcon(uint8 slot, uint32 width, uint32 height, int x, int y) const;
+    const char * GetSlotName(uint8 slot, WorldSession* session) const;
+    std::string GetItemLink(Item* item, WorldSession* session) const;
+    std::string GetItemLink(uint32 entry, WorldSession* session) const;
+    uint32 GetFakeEntry(uint64 itemGUID) const;
+    void UpdateItem(Player* player, Item* item) const;
+    void DeleteFakeEntry(Player* player, uint8 slot, Item* itemTransmogrified, SQLTransaction* trans = NULL);
+    void SetFakeEntry(Player* player, uint32 newEntry, uint8 slot, Item* itemTransmogrified);
+
+    TransmogAcoreStrings Transmogrify(Player* player, uint64 itemGUID, uint8 slot, /*uint32 newEntry, */bool no_cost = false);
+    bool CanTransmogrifyItemWithItem(Player* player, ItemTemplate const* destination, ItemTemplate const* source) const;
+    bool SuitableForTransmogrification(Player* player, ItemTemplate const* proto) const;
+
+//private:
+    typedef std::unordered_map<uint64, uint64> TransmogrificationDataContainer;
+    typedef std::unordered_map<uint64, TransmogrificationDataContainer> TransmogrificationMapContainer;
+    typedef std::map<uint8, uint32> SlotsContainer;
+    typedef std::map<uint8, SlotsContainer> PresetsContainer;
+    typedef std::unordered_map<uint64, PresetsContainer> PresetsDataMapContainer;
+    typedef std::map<uint8, std::string> PresetsIdMapContainer;
+    typedef std::unordered_map<uint64, PresetsIdMapContainer> PresetsNameMapContainer;
+
+    PresetsNameMapContainer _presetByName; // _presetByName[pGUID][presetID] = presetName
+    PresetsDataMapContainer _presetById; // _presetById[pGUID][presetID][slot] = entry
+    TransmogrificationMapContainer _mapStore;
+    TransmogrificationDataContainer _dataMapStore;
 
     bool EnableTransmogInfo;
     uint32 TransmogNpcText;
@@ -104,48 +140,15 @@ public:
     bool IgnoreReqEvent;
     bool IgnoreReqStats;
 
-    bool IsAllowed(uint32 entry) const;
-    bool IsNotAllowed(uint32 entry) const;
-    bool IsAllowedQuality(uint32 quality) const;
-    bool IsRangedWeapon(uint32 Class, uint32 SubClass) const;
+    bool EnableSetInfo;
+    uint32 SetNpcText;
 
-    void LoadConfig(bool reload); // thread unsafe
-
-    std::string GetItemIcon(uint32 entry, uint32 width, uint32 height, int x, int y) const;
-    std::string GetSlotIcon(uint8 slot, uint32 width, uint32 height, int x, int y) const;
-    const char * GetSlotName(uint8 slot, WorldSession* session) const;
-    std::string GetItemLink(Item* item, WorldSession* session) const;
-    std::string GetItemLink(uint32 entry, WorldSession* session) const;
-    uint32 GetFakeEntry(uint64 itemGUID) const;
-    void UpdateItem(Player* player, Item* item) const;
-    void DeleteFakeEntry(Player* player, uint8 slot, Item* itemTransmogrified, SQLTransaction* trans = NULL);
-    void SetFakeEntry(Player* player, uint32 newEntry, uint8 slot, Item* itemTransmogrified);
-
-    TransmogAcoreStrings Transmogrify(Player* player, uint64 itemGUID, uint8 slot, /*uint32 newEntry, */bool no_cost = false);
-    bool CanTransmogrifyItemWithItem(Player* player, ItemTemplate const* destination, ItemTemplate const* source) const;
-    bool SuitableForTransmogrification(Player* player, ItemTemplate const* proto) const;
-    // bool CanBeTransmogrified(Item const* item);
-    // bool CanTransmogrify(Item const* item);
-    uint32 GetSpecialPrice(ItemTemplate const* proto) const;
-
-    void DeleteFakeFromDB(uint64 itemGUID, SQLTransaction* trans = NULL);
-    float GetScaledCostModifier() const;
-    int32 GetCopperCost() const;
-
-    bool GetRequireToken() const;
-    uint32 GetTokenEntry() const;
-    uint32 GetTokenAmount() const;
-
-    bool GetAllowMixedArmorTypes() const;
-    bool GetAllowMixedWeaponTypes() const;
-
-    // Config
-    bool GetEnableTransmogInfo() const;
-    uint32 GetTransmogNpcText() const;
-    bool GetEnableSetInfo() const;
-    uint32 GetSetNpcText() const;
+    bool EnableSets;
+    uint8 MaxSets;
+    float SetCostModifier;
+    int32 SetCopperCost;
 };
 
-#define sTransmogrification ACE_Singleton<Transmogrification, ACE_Null_Mutex>::instance()
+#define sTransmogrification Transmogrification::instance()
 
 #endif

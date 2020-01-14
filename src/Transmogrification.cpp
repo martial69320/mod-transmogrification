@@ -1,4 +1,14 @@
+/*
+ * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>
+ */
+
 #include "Transmogrification.h"
+
+Transmogrification* Transmogrification::instance()
+{
+    static Transmogrification instance;
+    return &instance;
+}
 
 void Transmogrification::PresetTransmog(Player* player, Item* itemTransmogrified, uint32 fakeEntry, uint8 slot)
 {
@@ -28,11 +38,11 @@ void Transmogrification::PresetTransmog(Player* player, Item* itemTransmogrified
 
 void Transmogrification::LoadPlayerSets(uint64 pGUID)
 {
-    for (presetData::iterator it = presetById[pGUID].begin(); it != presetById[pGUID].end(); ++it)
+    for (PresetsContainer::iterator it = _presetById[pGUID].begin(); it != _presetById[pGUID].end(); ++it)
         it->second.clear();
 
-    presetById[pGUID].clear();
-    presetByName[pGUID].clear();
+    _presetById[pGUID].clear();
+    _presetByName[pGUID].clear();
 
     QueryResult result = CharacterDatabase.PQuery("SELECT `PresetID`, `SetName`, `SetData` FROM `custom_transmogrification_sets` WHERE Owner = %u", GUID_LOPART(pGUID));
     if (!result)
@@ -60,16 +70,16 @@ void Transmogrification::LoadPlayerSets(uint64 pGUID)
             }
 
             if (sObjectMgr->GetItemTemplate(entry))
-                presetById[pGUID][PresetID][slot] = entry; // Transmogrification::Preset(presetName, fakeEntry);
+                _presetById[pGUID][PresetID][slot] = entry; // Transmogrification::Preset(presetName, fakeEntry);
         }
 
-        if (!presetById[pGUID][PresetID].empty())
+        if (!_presetById[pGUID][PresetID].empty())
         {
-            presetByName[pGUID][PresetID] = SetName;           
+            _presetByName[pGUID][PresetID] = SetName;           
         }
         else // should be deleted on startup, so  this never runs (shouldnt..)
         {
-            presetById[pGUID].erase(PresetID);
+            _presetById[pGUID].erase(PresetID);
             CharacterDatabase.PExecute("DELETE FROM `custom_transmogrification_sets` WHERE Owner = %u AND PresetID = %u", GUID_LOPART(pGUID), PresetID);
         }
     } while (result->NextRow());
@@ -97,11 +107,11 @@ int32 Transmogrification::GetSetCopperCost() const
 
 void Transmogrification::UnloadPlayerSets(uint64 pGUID)
 {
-    for (presetData::iterator it = presetById[pGUID].begin(); it != presetById[pGUID].end(); ++it)
+    for (PresetsContainer::iterator it = _presetById[pGUID].begin(); it != _presetById[pGUID].end(); ++it)
         it->second.clear();
 
-    presetById[pGUID].clear();
-    presetByName[pGUID].clear();
+    _presetById[pGUID].clear();
+    _presetByName[pGUID].clear();
 }
 
 const char* Transmogrification::GetSlotName(uint8 slot, WorldSession* /*session*/) const
@@ -247,12 +257,12 @@ std::string Transmogrification::GetItemLink(uint32 entry, WorldSession* session)
 
 uint32 Transmogrification::GetFakeEntry(uint64 itemGUID) const
 {
-    auto const& itr = dataMap.find(itemGUID);
-    if (itr == dataMap.end())
+    auto const& itr = _dataMapStore.find(itemGUID);
+    if (itr == _dataMapStore.end())
         return 0;
 
-    auto const& itr2 = entryMap.find(itr->second);
-    if (itr2 == entryMap.end())
+    auto const& itr2 = _mapStore.find(itr->second);
+    if (itr2 == _mapStore.end())
         return 0;
 
     auto const& itr3 = itr2->second.find(itemGUID);
@@ -283,8 +293,8 @@ void Transmogrification::SetFakeEntry(Player* player, uint32 newEntry, uint8 /*s
 {
     uint64 itemGUID = itemTransmogrified->GetGUID();
 
-    entryMap[player->GetGUID()][itemGUID] = newEntry;
-    dataMap[itemGUID] = player->GetGUID();
+    _mapStore[player->GetGUID()][itemGUID] = newEntry;
+    _dataMapStore[itemGUID] = player->GetGUID();
 
     CharacterDatabase.PExecute("REPLACE INTO custom_transmogrification (GUID, FakeEntry, Owner) VALUES (%u, %u, %u)", GUID_LOPART(itemGUID), newEntry, player->GetGUIDLow());
     UpdateItem(player, itemTransmogrified);
@@ -628,8 +638,10 @@ void Transmogrification::LoadConfig(bool reload)
     {
         uint32 entry;
         issAllowed >> entry;
+
         if (issAllowed.fail())
             break;
+
         Allowed.insert(entry);
     }
 
@@ -637,8 +649,10 @@ void Transmogrification::LoadConfig(bool reload)
     {
         uint32 entry;
         issNotAllowed >> entry;
+
         if (issNotAllowed.fail())
             break;
+
         NotAllowed.insert(entry);
     }
 
@@ -679,11 +693,12 @@ void Transmogrification::LoadConfig(bool reload)
 
 void Transmogrification::DeleteFakeFromDB(uint64 itemGUID, SQLTransaction* trans)
 {
-    if (dataMap.find(itemGUID) != dataMap.end())
+    if (_dataMapStore.find(itemGUID) != _dataMapStore.end())
     {
-        if (entryMap.find(dataMap[itemGUID]) != entryMap.end())
-            entryMap[dataMap[itemGUID]].erase(itemGUID);
-        dataMap.erase(itemGUID);
+        if (_mapStore.find(_dataMapStore[itemGUID]) != _mapStore.end())
+            _mapStore[_dataMapStore[itemGUID]].erase(itemGUID);
+
+        _dataMapStore.erase(itemGUID);
     }
 
     if (trans)
