@@ -9,7 +9,6 @@
 #include <vector>
 #include <unordered_map>
 
-#define PRESETS // comment this line to disable preset feature totally
 #define MAX_OPTIONS 25 // do not alter
 
 class Item;
@@ -31,9 +30,7 @@ enum TransmogAcoreStrings // Language.h might have same entries, appears when ex
     LANG_ERR_UNTRANSMOG_OK,
     LANG_ERR_UNTRANSMOG_NO_TRANSMOGS,
 
-#ifdef PRESETS
     LANG_PRESET_ERR_INVALID_NAME,
-#endif
 };
 
 class Transmogrification
@@ -44,7 +41,6 @@ public:
     transmogMap entryMap; // entryMap[pGUID][iGUID] = entry
     transmogData dataMap; // dataMap[iGUID] = pGUID
 
-#ifdef PRESETS
     bool EnableSetInfo;
     uint32 SetNpcText;
 
@@ -71,7 +67,6 @@ public:
 
     void LoadPlayerSets(uint64 pGUID);
     void UnloadPlayerSets(uint64 pGUID);
-#endif
 
     bool EnableTransmogInfo;
     uint32 TransmogNpcText;

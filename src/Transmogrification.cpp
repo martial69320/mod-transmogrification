@@ -1,6 +1,5 @@
 #include "Transmogrification.h"
 
-#ifdef PRESETS
 void Transmogrification::PresetTransmog(Player* player, Item* itemTransmogrified, uint32 fakeEntry, uint8 slot)
 {
     if (!EnableSets)
@@ -104,7 +103,6 @@ void Transmogrification::UnloadPlayerSets(uint64 pGUID)
     presetById[pGUID].clear();
     presetByName[pGUID].clear();
 }
-#endif
 
 const char* Transmogrification::GetSlotName(uint8 slot, WorldSession* /*session*/) const
 {
@@ -594,7 +592,6 @@ bool Transmogrification::IsAllowedQuality(uint32 quality) const
 
 void Transmogrification::LoadConfig(bool reload)
 {
-#ifdef PRESETS
     EnableSetInfo = sConfigMgr->GetBoolDefault("Transmogrification.EnableSetInfo", true);
     SetNpcText = uint32(sConfigMgr->GetIntDefault("Transmogrification.SetNpcText", 601084));
 
@@ -620,7 +617,6 @@ void Transmogrification::LoadConfig(bool reload)
             }
         }
     }
-#endif
 
     EnableTransmogInfo = sConfigMgr->GetBoolDefault("Transmogrification.EnableTransmogInfo", true);
     TransmogNpcText = uint32(sConfigMgr->GetIntDefault("Transmogrification.TransmogNpcText", 601083));

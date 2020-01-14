@@ -48,10 +48,9 @@ public:
             }
         }
 
-#ifdef PRESETS
         if (sT->GetEnableSets())
             AddGossipItemFor(player, GOSSIP_ICON_MONEY_BAG, "|TInterface/RAIDFRAME/UI-RAIDFRAME-MAINASSIST:30:30:-18:0|tManage sets", EQUIPMENT_SLOT_END + 4, 0);
-#endif
+        
         AddGossipItemFor(player, GOSSIP_ICON_MONEY_BAG, "|TInterface/ICONS/INV_Enchant_Disenchant:30:30:-18:0|tRemove all transmogrifications", EQUIPMENT_SLOT_END + 2, 0, "Remove transmogrifications from all equipped items?", 0, false);
         AddGossipItemFor(player, GOSSIP_ICON_MONEY_BAG, "|TInterface/PaperDollInfoFrame/UI-GearManager-Undo:30:30:-18:0|tUpdate menu", EQUIPMENT_SLOT_END + 1, 0);
         SendGossipMenuFor(player, DEFAULT_GOSSIP_MESSAGE, creature->GetGUID());
@@ -117,7 +116,6 @@ public:
                 OnGossipSelect(player, creature, EQUIPMENT_SLOT_END, action);
             }
             break;
-    #ifdef PRESETS
             case EQUIPMENT_SLOT_END + 4: // Presets menu
             {
                 if (!sT->GetEnableSets())
@@ -244,7 +242,6 @@ public:
                 SendGossipMenuFor(player, sT->GetSetNpcText(), creature->GetGUID());
             }
             break;
-    #endif
             case EQUIPMENT_SLOT_END + 9: // Transmog info
             {
                 AddGossipItemFor(player, GOSSIP_ICON_MONEY_BAG, "|TInterface/ICONS/Ability_Spy:30:30:-18:0|tBack..", EQUIPMENT_SLOT_END + 1, 0);
@@ -274,7 +271,6 @@ public:
         return true;
     }
 
-#ifdef PRESETS
     bool OnGossipSelectCode(Player* player, Creature* creature, uint32 sender, uint32 action, const char* code)
     {
         player->PlayerTalkClass->ClearMenus();
@@ -356,7 +352,6 @@ public:
 
         return true;
     }
-#endif
 
     void ShowTransmogItems(Player* player, Creature* creature, uint8 slot) // Only checks bags while can use an item from anywhere in inventory
     {
@@ -482,10 +477,8 @@ public:
             }
         }
 
-#ifdef PRESETS
         if (sT->GetEnableSets())
             sT->LoadPlayerSets(playerGUID);
-#endif
     }
 
     void OnLogout(Player* player) override
@@ -497,10 +490,8 @@ public:
         
         sT->entryMap.erase(pGUID);
 
-#ifdef PRESETS
         if (sT->GetEnableSets())
             sT->UnloadPlayerSets(pGUID);
-#endif
     }
 };
 
@@ -521,11 +512,9 @@ public:
         LOG_DEBUG("modules.transmog", "Deleting non-existing transmogrification entries...");
         CharacterDatabase.Execute("DELETE FROM custom_transmogrification WHERE NOT EXISTS (SELECT 1 FROM item_instance WHERE item_instance.guid = custom_transmogrification.GUID)");
 
-#ifdef PRESETS
         // Clean even if disabled
         // Dont delete even if player has more presets than should
         CharacterDatabase.Execute("DELETE FROM `custom_transmogrification_sets` WHERE NOT EXISTS(SELECT 1 FROM characters WHERE characters.guid = custom_transmogrification_sets.Owner)");
-#endif
     }
 };
 
